@@ -1,0 +1,444 @@
+The exchange method executes the request of any HTTP method and returns ResponseEntity instance. 
+The exchange method can be used for HTTP DELETE, GET, HEAD, OPTIONS, PATCH, POST, PUT, TRACE methods. Using exchange method we can perform CRUD operation i.e. create, read, update and delete data. 
+The exchange method returns ResponseEntity using which we can get response status, body and headers.
+The exchange method can be used with variety of parameters.
+
+RequestEntity + responseType
+ResponseEntity<T> exchange(RequestEntity<?> requestEntity, Class<T> responseType)
+ResponseEntity<T> exchange(RequestEntity<?> requestEntity, ParameterizedTypeReference<T> responseType)
+
+url + HttpMethod + HttpEntity + responseType + uriVariables
+ResponseEntity<T>	exchange(String url, HttpMethod method, HttpEntity<?> requestEntity, Class<T> responseType, Map<String,?> uriVariables)
+ResponseEntity<T>	exchange(String url, HttpMethod method, HttpEntity<?> requestEntity, Class<T> responseType, Object... uriVariables)
+ResponseEntity<T>	exchange(String url, HttpMethod method, HttpEntity<?> requestEntity, ParameterizedTypeReference<T> responseType, Map<String,?> uriVariables)
+ResponseEntity<T>	exchange(String url, HttpMethod method, HttpEntity<?> requestEntity, ParameterizedTypeReference<T> responseType, Object... uriVariables) 
+
+URI + HttpMethod + HttpEntity + responseType
+ResponseEntity<T>	exchange(URI url, HttpMethod method, HttpEntity<?> requestEntity, Class<T> responseType)
+ResponseEntity<T>	exchange(URI url, HttpMethod method, HttpEntity<?> requestEntity, ParameterizedTypeReference<T> responseType) 
+
+3. exchange() to Post Data
+To use exchange to post data, we need to use HTTP method as HttpMethod.POST. 
+For request entity, we can use HttpEntity and RequestEntity. 
+For response type we can pass usual response type or ParameterizedTypeReference.
+
+URI + HttpMethod + HttpEntity + responseType
+URI uri = new URI("http://localhost:8080/employee");
+HttpEntity<Employee> httpEntity = new HttpEntity<Employee>(objEmp, headers);
+RestTemplate restTemplate = new RestTemplate();
+ResponseEntity<Employee> responseEntity = restTemplate.exchange(uri, HttpMethod.POST, httpEntity, Employee.class); 
+
+RequestEntity + ParameterizedTypeReference
+RequestEntity<Employee> requestEntity = new RequestEntity<>(objEmp, headers, HttpMethod.POST, uri);
+ParameterizedTypeReference<Employee> typeRef = new ParameterizedTypeReference<Employee>() {};
+RestTemplate restTemplate = new RestTemplate();
+ResponseEntity<Employee> responseEntity = restTemplate.exchange(requestEntity, typeRef); Server Code
+To serve the above client code to post data, our server code will be as follows.
+@PostMapping(value = "employee")
+public ResponseEntity<Employee> addEmployee(@RequestBody Employee employee, UriComponentsBuilder builder) {
+   ------
+} 
+4. exchange() to Get Data
+To use exchange to get data, we need to use HTTP method as HttpMethod.GET. 
+To query data for the given properties, we can pass them as URI variables. 
+The exchange method accepts URI variable arguments as Map and Object Varargs. 
+The response type can be usual response type and ParameterizedTypeReference.
+ 
+url + HttpMethod + HttpEntity + responseType + Map
+String url = "http://localhost:8080/employee/{profile}/{tech}";
+Map<String, String> map = new HashMap<>();
+map.put("profile", "Developer");
+map.put("tech", "Java");
+ResponseEntity<Employee[]> responseEntity = 
+restTemplate.exchange(url, HttpMethod.GET, httpEntity, Employee[].class, map); 
+
+url + HttpMethod + HttpEntity + ParameterizedTypeReference + Object Varargs
+String url = "http://localhost:8080/employee/{profile}/{tech}";
+ParameterizedTypeReference<List<Employee>> typeRef = new ParameterizedTypeReference<List<Employee>>() {};
+
+ResponseEntity<List<Employee>> responseEntity = restTemplate.exchange(url, HttpMethod.GET, httpEntity, typeRef, profile, tech); Server Code
+To serve the above client code to get data, our server code will be as follows.
+@GetMapping(value = "employee/{profile}/{tech}")
+public ResponseEntity<List<Employee>> getEmployeesByProfileNTech(@PathVariable("profile") String profile,
+			@PathVariable("tech") String technology) {
+ ------
+} 
+
+5. exchange() to Update Data
+To use exchange to update data, we need to use HTTP method as HttpMethod.PUT. For request entity, we can use HttpEntity and RequestEntity. For response type we can pass usual response type or ParameterizedTypeReference.
+Find the client code examples to use exchange to update data.
+URI + HttpMethod + HttpEntity + responseType
+URI uri = new URI("http://localhost:8080/employee");
+HttpEntity<Employee> httpEntity = new HttpEntity<Employee>(objEmp, headers);
+
+ResponseEntity<Employee> responseEntity = restTemplate.exchange(uri, HttpMethod.PUT, httpEntity, Employee.class); RequestEntity + ParameterizedTypeReference
+RequestEntity<Employee> requestEntity = new RequestEntity<>(objEmp, headers, HttpMethod.PUT, uri);
+ParameterizedTypeReference<Employee> typeRef = new ParameterizedTypeReference<Employee>() {};
+
+ResponseEntity<Employee> responseEntity = restTemplate.exchange(requestEntity, typeRef); Server Code
+To serve the above client code to update data, our server code will be as follows.
+@PutMapping(value = "employee")
+public ResponseEntity<Employee> updateEmployee(@RequestBody Employee employee) {
+   ------
+} 
+6. exchange() to Delete Data
+To use exchange to delete data, we need to use HTTP method as HttpMethod.DELETE. To pass properties to delete data, we can use URI variables as Map and Object Varargs.
+Find the client code using URI variable as Object Varargs.
+String url = "http://localhost:8080/employee/{id}";
+ResponseEntity<Void> responseEntity = 
+	restTemplate.exchange(url, HttpMethod.DELETE, httpEntity, Void.class, empId); Find the client code using URI variable as Map.
+String url = "http://localhost:8080/employee/{id}";
+Map<String, Integer> map = new HashMap<>();
+map.put("id", 200);
+ResponseEntity<Void> responseEntity = 
+	restTemplate.exchange(url, HttpMethod.DELETE, httpEntity, Void.class, map); Server Code
+To serve the above client code to delete data, our server code will be as follows.
+@DeleteMapping(value = "employee/{id}")
+public ResponseEntity<Void> deleteEmployee(@PathVariable("id") Integer empId) {
+   ------
+} 
+7. Complete CRUD Example using exchange()
+Find client code for POST.
+RestClientUtilPost.java
+package com.concretepage.client;
+import java.net.URI;
+import java.net.URISyntaxException;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.http.RequestEntity;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.RestTemplate;
+import com.concretepage.domain.Employee;
+
+public class RestClientUtilPost {
+
+	// exchange(URI url, HttpMethod method, HttpEntity<?> requestEntity, Class<T> responseType)
+	public void addEmployeeDemo() throws URISyntaxException {
+		HttpHeaders headers = new HttpHeaders();
+		headers.setContentType(MediaType.APPLICATION_JSON);
+
+		URI uri = new URI("http://localhost:8080/employee");
+		Employee objEmp = new Employee();
+		objEmp.setName("Krishna");
+		objEmp.setCity("Noida");
+
+		HttpEntity<Employee> httpEntity = new HttpEntity<Employee>(objEmp, headers);
+
+		RestTemplate restTemplate = new RestTemplate();
+		ResponseEntity<Employee> responseEntity = restTemplate.exchange(uri, HttpMethod.POST, httpEntity,
+				Employee.class);
+
+		System.out.println("Status Code: " + responseEntity.getStatusCode());
+		System.out.println("Id: " + responseEntity.getBody().getEmpId());
+		System.out.println("Location: " + responseEntity.getHeaders().getLocation());
+	}
+
+	// exchange(RequestEntity<?> requestEntity, ParameterizedTypeReference<T> responseType)
+	public void addEmployeeDemoPTRef() throws URISyntaxException {
+		HttpHeaders headers = new HttpHeaders();
+		headers.setContentType(MediaType.APPLICATION_JSON);
+
+		URI uri = new URI("http://localhost:8080/employee");
+		Employee objEmp = new Employee();
+		objEmp.setName("Krishna");
+		objEmp.setCity("Noida");
+
+		RequestEntity<Employee> requestEntity = new RequestEntity<>(objEmp, headers, HttpMethod.POST, uri);
+
+		ParameterizedTypeReference<Employee> typeRef = new ParameterizedTypeReference<Employee>() {
+		};
+		RestTemplate restTemplate = new RestTemplate();
+		ResponseEntity<Employee> responseEntity = restTemplate.exchange(requestEntity, typeRef);
+
+		System.out.println("Status Code: " + responseEntity.getStatusCode());
+		System.out.println("Id: " + responseEntity.getBody().getEmpId());
+		System.out.println("Location: " + responseEntity.getHeaders().getLocation());
+	}
+
+	public static void main(String args[]) throws URISyntaxException {
+		RestClientUtilPost util = new RestClientUtilPost();
+		util.addEmployeeDemo();
+		util.addEmployeeDemoPTRef();
+	}
+} Output for addEmployeeDemo() method.
+Status Code: 201 CREATED
+Id: 201
+Location: http://localhost:8080/employee/201 
+Find client code for GET.
+RestClientUtilGet.java
+package com.concretepage.client;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.RestTemplate;
+import com.concretepage.domain.Employee;
+
+public class RestClientUtilGet {
+
+	// exchange(String url, HttpMethod method, HttpEntity<?> requestEntity,
+	//                       Class<T> responseType, Map<String,?> uriVariables)
+	public void getEmployeeDemo() {
+		HttpHeaders headers = new HttpHeaders();
+		headers.setContentType(MediaType.APPLICATION_JSON);
+
+		String url = "http://localhost:8080/employee/{profile}/{tech}";
+
+		HttpEntity<?> httpEntity = new HttpEntity<>(headers);
+
+		Map<String, String> map = new HashMap<>();
+		map.put("profile", "Developer");
+		map.put("tech", "Java");
+
+		RestTemplate restTemplate = new RestTemplate();
+		ResponseEntity<Employee[]> responseEntity = restTemplate.exchange(url, HttpMethod.GET, httpEntity,
+				Employee[].class, map);
+
+		System.out.println("Status Code: " + responseEntity.getStatusCode());
+		for (Employee e : responseEntity.getBody()) {
+			System.out.println(e);
+		}
+	}
+
+	// exchange(String url, HttpMethod method, HttpEntity<?> requestEntity,
+	//                         ParameterizedTypeReference<T> responseType, Object... uriVariables)
+	public void getEmployeeDemoPTRef() {
+		HttpHeaders headers = new HttpHeaders();
+		headers.setContentType(MediaType.APPLICATION_JSON);
+
+		String url = "http://localhost:8080/employee/{profile}/{tech}";
+
+		HttpEntity<?> httpEntity = new HttpEntity<>(headers);
+
+		String profile = "Developer";
+		String tech = "Java";
+
+		ParameterizedTypeReference<List<Employee>> typeRef = new ParameterizedTypeReference<List<Employee>>() {
+		};
+		RestTemplate restTemplate = new RestTemplate();
+		ResponseEntity<List<Employee>> responseEntity = restTemplate.exchange(url, HttpMethod.GET, httpEntity, typeRef,
+				profile, tech);
+
+		System.out.println("Status Code: " + responseEntity.getStatusCode());
+		responseEntity.getBody().forEach(e -> System.out.println(e));
+	}
+
+	public static void main(String args[]) {
+		RestClientUtilGet util = new RestClientUtilGet();
+		util.getEmployeeDemo();
+		util.getEmployeeDemoPTRef();
+	}
+} Output for getEmployeeDemo() method.
+Status Code: 200 OK
+101, Lakshman, Agra
+102, Bharat, Mathura
+103, Shatrughan, Noida 
+Find client code for PUT.
+RestClientUtilPut.java
+package com.concretepage.client;
+import java.net.URI;
+import java.net.URISyntaxException;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.http.RequestEntity;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.RestTemplate;
+import com.concretepage.domain.Employee;
+
+public class RestClientUtilPut {
+
+	// exchange(URI url, HttpMethod method, HttpEntity<?> requestEntity, Class<T> responseType)
+	public void updateEmployeeDemo() throws URISyntaxException {
+		HttpHeaders headers = new HttpHeaders();
+		headers.setContentType(MediaType.APPLICATION_JSON);
+
+		URI uri = new URI("http://localhost:8080/employee");
+		Employee objEmp = new Employee(100, "Krishna", "Noida");
+
+		HttpEntity<Employee> httpEntity = new HttpEntity<Employee>(objEmp, headers);
+
+		RestTemplate restTemplate = new RestTemplate();
+		ResponseEntity<Employee> responseEntity = restTemplate.exchange(uri, HttpMethod.PUT, httpEntity,
+				Employee.class);
+
+		System.out.println("Status Code: " + responseEntity.getStatusCode());
+		System.out.println(responseEntity.getBody());
+	}
+
+	// exchange(RequestEntity<?> requestEntity, ParameterizedTypeReference<T> responseType)
+	public void updateEmployeeDemoPTRef() throws URISyntaxException {
+		HttpHeaders headers = new HttpHeaders();
+		headers.setContentType(MediaType.APPLICATION_JSON);
+
+		URI uri = new URI("http://localhost:8080/employee");
+		Employee objEmp = new Employee(100, "Krishna", "Noida");
+
+		RequestEntity<Employee> requestEntity = new RequestEntity<>(objEmp, headers, HttpMethod.PUT, uri);
+
+		ParameterizedTypeReference<Employee> typeRef = new ParameterizedTypeReference<Employee>() {
+		};
+		RestTemplate restTemplate = new RestTemplate();
+		ResponseEntity<Employee> responseEntity = restTemplate.exchange(requestEntity, typeRef);
+
+		System.out.println("Status Code: " + responseEntity.getStatusCode());
+		System.out.println(responseEntity.getBody());
+	}
+
+	public static void main(String args[]) throws URISyntaxException {
+		RestClientUtilPut util = new RestClientUtilPut();
+		util.updateEmployeeDemo();
+		util.updateEmployeeDemoPTRef();
+	}
+} Output for updateEmployeeDemo() method.
+Status Code: 200 OK
+100, Shri Krishna, Mathura 
+Find client code for DELETE.
+RestClientUtilDelete.java
+package com.concretepage.client;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.RestTemplate;
+
+public class RestClientUtilDelete {
+
+	// exchange(String url, HttpMethod method, HttpEntity<?> requestEntity,
+	//                   ParameterizedTypeReference<T> responseType, Object... uriVariables)
+	public void deleteEmployeeDemo() {
+		HttpHeaders headers = new HttpHeaders();
+		headers.setContentType(MediaType.APPLICATION_JSON);
+
+		String url = "http://localhost:8080/employee/{id}";
+
+		HttpEntity<?> httpEntity = new HttpEntity<>(headers);
+		Integer empId = 200;
+		RestTemplate restTemplate = new RestTemplate();
+		ResponseEntity<Void> responseEntity = restTemplate.exchange(url, HttpMethod.DELETE, httpEntity, Void.class,
+				empId);
+
+		System.out.println("Status Code: " + responseEntity.getStatusCode());
+	}
+
+	public static void main(String args[]) {
+		RestClientUtilDelete util = new RestClientUtilDelete();
+		util.deleteEmployeeDemo();
+	}
+} Output
+Status Code: 204 NO_CONTENT 
+Find the server code.
+EmployeeController.java
+package com.concretepage.controller;
+import java.util.List;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.util.UriComponentsBuilder;
+import com.concretepage.domain.Employee;
+import com.concretepage.service.EmployeeService;
+
+@RestController
+public class EmployeeController {
+	@Autowired
+	private EmployeeService empService;
+
+	@GetMapping(value = "employee/{profile}/{tech}")
+	public ResponseEntity<List<Employee>> getEmployeesByProfileNTech(@PathVariable("profile") String profile,
+			@PathVariable("tech") String technology) {
+		List<Employee> list = empService.getEmployees(profile, technology);
+		return new ResponseEntity<List<Employee>>(list, HttpStatus.OK);
+	}
+
+	@PostMapping(value = "employee")
+	public ResponseEntity<Employee> addEmployee(@RequestBody Employee employee, UriComponentsBuilder builder) {
+
+		empService.addEmployee(employee);
+
+		HttpHeaders headers = new HttpHeaders();
+		headers.setLocation(builder.path("/employee/{id}").buildAndExpand(employee.getEmpId()).toUri());
+		return new ResponseEntity<Employee>(employee, headers, HttpStatus.CREATED);
+	}
+
+	@PutMapping(value = "employee")
+	public ResponseEntity<Employee> updateEmployee(@RequestBody Employee employee) {
+		empService.updateEmployee(employee);
+		return new ResponseEntity<Employee>(employee, HttpStatus.OK);
+	}
+
+	@DeleteMapping(value = "employee/{id}")
+	public ResponseEntity<Void> deleteEmployee(@PathVariable("id") Integer empId) {
+		empService.deleteEmployee(empId);
+		return new ResponseEntity<Void>(HttpStatus.NO_CONTENT);
+	}
+} Employee.java
+package com.concretepage.domain;
+public class Employee {
+	private int empId;
+	private String name;
+	private String city;
+	public Employee() {}
+	public Employee(int empId, String name, String city) {
+		this.empId = empId;
+		this.name = name;
+		this.city = city;
+	}
+        //Setters and Getters
+} EmployeeService.java
+package com.concretepage.service;
+import java.util.Arrays;
+import java.util.List;
+import org.springframework.stereotype.Service;
+import com.concretepage.domain.Employee;
+
+@Service
+public class EmployeeService {
+	public void addEmployee(Employee emp) {
+		// Perform database operation
+		emp.setEmpId(201);
+		System.out.println("Name: " + emp.getName());
+		System.out.println("City: " + emp.getCity());
+	}
+
+	public List<Employee> getEmployees(String profile, String technology) {
+		// Perform database operation
+		System.out.println(profile);
+		System.out.println(technology);
+		Employee e1 = new Employee(101, "Lakshman", "Agra");
+		Employee e2 = new Employee(102, "Bharat", "Mathura");
+		Employee e3 = new Employee(103, "Shatrughan", "Noida");
+		return Arrays.asList(e1, e2, e3);
+	}
+
+	public void updateEmployee(Employee emp) {
+		// Perform database operation
+		emp.setName("Shri Krishna");
+		emp.setCity("Mathura");
+	}
+
+	public void deleteEmployee(int empId) {
+		// Perform database operation
+		System.out.println("Employee deleted with id " + empId);
+	}
+} 
+
+https://www.concretepage.com/spring-5/spring-resttemplate-exchange
